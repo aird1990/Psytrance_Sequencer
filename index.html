@@ -14,6 +14,7 @@
             --psy-blue: #00f3ff;
             --psy-yellow: #fefe00;
             --void-bg: #050010;
+            --panel-bg: rgba(10, 5, 20, 0.95);
             --grid-bg: #0a0514;
             --step-inactive: #151020;
         }
@@ -30,8 +31,8 @@
             padding: 20px;
             /* Trippy Background */
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(255, 0, 204, 0.1) 0%, transparent 20%),
-                repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(57, 255, 20, 0.03) 30deg 60deg);
+                radial-gradient(circle at 50% 50%, rgba(255, 0, 204, 0.15) 0%, transparent 20%),
+                repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(57, 255, 20, 0.05) 30deg 60deg);
             background-attachment: fixed;
             box-sizing: border-box;
         }
@@ -64,7 +65,7 @@
         }
 
         .sequencer-container {
-            background: rgba(10, 5, 20, 0.9);
+            background: var(--panel-bg);
             border: 2px solid var(--psy-blue);
             border-radius: 8px;
             padding: 20px;
@@ -128,6 +129,24 @@
             box-shadow: 0 0 20px var(--psy-blue);
         }
 
+        /* Bar Selector Buttons */
+        .bar-btn {
+            border-color: #444;
+            color: #888;
+            background: #000;
+            min-width: 32px;
+            padding: 6px 10px;
+            font-family: 'Orbitron', sans-serif;
+            border: 1px solid #444;
+        }
+        .bar-btn:hover { border-color: var(--psy-blue); color: var(--psy-blue); }
+        .bar-btn.current {
+            border-color: var(--psy-blue);
+            background: var(--psy-blue);
+            color: #000;
+            box-shadow: 0 0 15px var(--psy-blue);
+        }
+
         select {
             background: #000;
             color: var(--psy-blue);
@@ -158,11 +177,12 @@
 
         .grid-scroll-area {
             overflow-x: auto;
+            overflow-y: hidden;
             padding-bottom: 10px;
         }
 
         .grid-fixed-width {
-            min-width: 680px; /* Prevent squashing */
+            min-width: 680px;
         }
 
         .grid-row {
@@ -171,6 +191,7 @@
             gap: 4px;
             margin-bottom: 6px;
             align-items: center;
+            min-height: 44px;
         }
 
         .track-label {
@@ -192,13 +213,11 @@
             border-radius: 2px;
             box-sizing: border-box;
         }
+        .step.hidden-step { display: none; }
 
         /* Beat Grouping - Using borders */
-        .step:nth-child(4n + 5) {
-            border-right: 6px solid var(--grid-bg);
-        }
-        .step:last-child {
-            border-right: 1px solid #333;
+        .step:not(.hidden-step):nth-of-type(4n + 2) {
+            border-left: 2px solid #555;
         }
 
         .step:hover {
@@ -206,21 +225,37 @@
             transform: scale(1.05);
         }
 
-        .step.active {
-            background: #fff;
+        /* Active Colors (High Specificity) */
+        /* OH */
+        #row-0 .step.active { 
+            background: var(--psy-green) !important; 
+            box-shadow: 0 0 15px var(--psy-green); 
             border-color: #fff;
         }
-        
-        /* Psytrance Colors */
-        .row-kick .step.active { background: var(--psy-pink); box-shadow: 0 0 15px var(--psy-pink); }
-        .row-snare .step.active { background: var(--psy-blue); box-shadow: 0 0 15px var(--psy-blue); }
-        .row-hihat .step.active { background: var(--psy-yellow); box-shadow: 0 0 15px var(--psy-yellow); }
-        .row-openhat .step.active { background: var(--psy-green); box-shadow: 0 0 15px var(--psy-green); }
+        /* CH */
+        #row-1 .step.active { 
+            background: var(--psy-yellow) !important; 
+            box-shadow: 0 0 15px var(--psy-yellow); 
+            border-color: #fff;
+        }
+        /* Snare */
+        #row-2 .step.active { 
+            background: var(--psy-blue) !important; 
+            box-shadow: 0 0 15px var(--psy-blue); 
+            border-color: #fff;
+        }
+        /* Kick */
+        #row-3 .step.active { 
+            background: var(--psy-pink) !important; 
+            box-shadow: 0 0 15px var(--psy-pink); 
+            border-color: #fff;
+        }
 
         .step.playing {
             transform: scale(1.2);
             filter: brightness(1.5) contrast(1.2);
             z-index: 10;
+            border-color: #fff !important;
         }
 
         .indicator {
@@ -230,11 +265,7 @@
             margin-bottom: 8px;
             box-sizing: border-box;
         }
-        
-        .indicator:nth-child(4n + 5) {
-            border-right: 6px solid var(--grid-bg);
-        }
-
+        .indicator.hidden-step { display: none; }
         .indicator.active {
             background: #fff;
             box-shadow: 0 0 10px #fff, 0 0 20px #fff;
@@ -275,7 +306,6 @@
                 <button id="playBtn" class="btn">▶ ACTIVATE</button>
                 <button id="stopBtn" class="btn">■ HALT</button>
                 <button id="clearBtn" class="btn btn-danger">RESET</button>
-                <button id="exportBtn" class="btn btn-blue">MIDI ↓</button>
             </div>
             
             <div class="flex flex-wrap gap-4 items-center flex-grow justify-end">
@@ -291,6 +321,24 @@
                 </div>
             </div>
 
+            <button id="exportBtn" class="btn btn-blue">MIDI ↓</button>
+        </div>
+
+        <!-- Bar Selection -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4 bg-black/40 p-3 rounded border border-white/10">
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-400 font-bold font-orbitron mr-1">BAR:</span>
+                <button class="btn bar-btn current" data-bar="0">1</button>
+                <button class="btn bar-btn" data-bar="1">2</button>
+                <button class="btn bar-btn" data-bar="2">3</button>
+                <button class="btn bar-btn" data-bar="3">4</button>
+                <div class="h-6 w-px bg-gray-600 mx-2"></div>
+                <label class="flex items-center cursor-pointer gap-2">
+                    <input type="checkbox" id="autoFollowCheck" checked class="accent-[#00f3ff]">
+                    <span class="text-xs text-gray-400 font-bold select-none font-orbitron">AUTO</span>
+                </label>
+            </div>
+
             <select id="presetSelect" class="w-full sm:w-auto text-sm">
                 <option value="" disabled selected>SELECT PROGRAM...</option>
             </select>
@@ -301,46 +349,26 @@
             <div id="descDisplay" class="text-blue-300 text-xs mt-1 h-4 font-orbitron">System Ready.</div>
         </div>
 
-        <!-- Sequencer Grid (Scrollable) -->
+        <!-- Sequencer Grid -->
         <div class="grid-wrapper">
             <div class="grid-scroll-area">
-                <div class="grid-fixed-width">
+                <div class="grid-fixed-width" id="grid-root">
                     <!-- Indicators -->
                     <div class="grid-row mb-2" id="indicators-row">
-                        <div></div> <!-- Spacer -->
-                        <!-- Indicators injected here -->
+                        <div></div>
                     </div>
-
-                    <!-- Open Hi-Hat -->
-                    <div class="grid-row row-openhat" id="row-openhat">
-                        <div class="track-label">Crash/FX</div>
-                        <!-- Steps injected here -->
-                    </div>
-
-                    <!-- Closed Hi-Hat -->
-                    <div class="grid-row row-hihat" id="row-hihat">
-                        <div class="track-label">Hat</div>
-                        <!-- Steps injected here -->
-                    </div>
-
-                    <!-- Snare -->
-                    <div class="grid-row row-snare" id="row-snare">
-                        <div class="track-label">Snare</div>
-                        <!-- Steps injected here -->
-                    </div>
-
-                    <!-- Kick -->
-                    <div class="grid-row row-kick" id="row-kick">
-                        <div class="track-label">Psy Kick</div>
-                        <!-- Steps injected here -->
-                    </div>
+                    <!-- Rows (Unified Numeric IDs) -->
+                    <div class="grid-row" id="row-0"></div>
+                    <div class="grid-row" id="row-1"></div>
+                    <div class="grid-row" id="row-2"></div>
+                    <div class="grid-row" id="row-3"></div>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="description">
-        Full-on Psychedelic Trance
+        Full-on Psychedelic Trance // 4-Bar Expansion
     </div>
 
     <script>
@@ -379,15 +407,14 @@
             gainNode.connect(masterGainNode);
             
             // Psy Kick: "Plastic" and fast
-            // Starts high frequency, drops very quickly to low punch
             osc.frequency.setValueAtTime(200, time);
             osc.frequency.exponentialRampToValueAtTime(50, time + 0.08); // Very fast sweep
             
             gainNode.gain.setValueAtTime(1.0, time);
             gainNode.gain.exponentialRampToValueAtTime(0.9, time + 0.05);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.25); // Short tight tail to leave room for bass
+            gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.25); 
             
-            // Click/Transient for definition
+            // Click/Transient
             const clickOsc = audioCtx.createOscillator();
             const clickGain = audioCtx.createGain();
             clickOsc.type = 'square';
@@ -396,7 +423,7 @@
             
             clickOsc.frequency.setValueAtTime(800, time);
             clickGain.gain.setValueAtTime(0.4, time);
-            clickGain.gain.exponentialRampToValueAtTime(0.01, time + 0.01); // Instant click
+            clickGain.gain.exponentialRampToValueAtTime(0.01, time + 0.01);
             
             clickOsc.start(time);
             clickOsc.stop(time + 0.01);
@@ -406,8 +433,7 @@
         }
 
         function playSnare(time) {
-            // Tight Snare / Clap hybrid
-            const bufferSize = audioCtx.sampleRate * 0.2; // Short
+            const bufferSize = audioCtx.sampleRate * 0.2;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) {
@@ -428,9 +454,8 @@
             noiseGain.connect(masterGainNode);
             
             noiseGain.gain.setValueAtTime(0.8, time);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.15); // Very snappy
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
 
-            // Tone body
             const osc = audioCtx.createOscillator();
             osc.frequency.setValueAtTime(250, time);
             osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
@@ -447,7 +472,6 @@
         }
 
         function playHiHat(time, open = false) {
-            // Psytrance hats are extremely short and metallic (Zap/Clicky)
             const bufferSize = audioCtx.sampleRate * 0.3;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -460,7 +484,7 @@
             
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'highpass';
-            filter.frequency.value = 8000; // Very high
+            filter.frequency.value = 8000; 
 
             const gainNode = audioCtx.createGain();
             
@@ -468,7 +492,7 @@
             filter.connect(gainNode);
             gainNode.connect(masterGainNode);
             
-            const decay = open ? 0.2 : 0.03; // Closed is super tight (30ms)
+            const decay = open ? 0.2 : 0.03; 
             const vol = open ? 0.4 : 0.25;
 
             gainNode.gain.setValueAtTime(vol, time);
@@ -479,31 +503,252 @@
         }
 
         // --- Sequencer Logic ---
-        const STEPS = 16;
+        const STEPS = 64;
         let isPlaying = false;
         let currentStep = 0;
         let nextNoteTime = 0.0;
-        let bpm = 145; // Psytrance Standard
+        let bpm = 145; 
         let timerID;
-        let lookahead = 25.0; 
-        let scheduleAheadTime = 0.1;
+        let currentBarView = 0;
+        let autoFollow = true;
+        const lookahead = 25.0; 
+        const scheduleAheadTime = 0.1;
 
         // State: 0=OH, 1=CH, 2=Snare, 3=Kick
         let gridState = [
-            new Array(STEPS).fill(false), // OH
-            new Array(STEPS).fill(false), // CH
-            new Array(STEPS).fill(false), // Snare
-            new Array(STEPS).fill(false)  // Kick
+            new Array(STEPS).fill(false),
+            new Array(STEPS).fill(false),
+            new Array(STEPS).fill(false),
+            new Array(STEPS).fill(false)
         ];
 
-        // --- MIDI Export Functions ---
-        function exportMIDI() {
-            const writeString = (view, offset, string) => {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
-                }
-            };
+        // --- 30 Psytrance Presets (4-Bar) ---
+        const presets = [
+            { name: "1. Full On Basic", desc: "The standard galloping rhythm. Fill end.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 56, 60, 62], ch: [2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23, 26, 27, 30, 31, 34, 35, 38, 39, 42, 43, 46, 47, 50, 51, 54, 55, 58, 59, 62, 63], oh: [2, 10, 18, 26, 34, 42, 50, 58] },
+            
+            { name: "2. The Rolling Bass", desc: "Simulates K-B-B-B. Snare roll fill.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [56, 57, 58, 59, 60, 61, 62, 63], ch: [1,2,3, 5,6,7, 9,10,11, 13,14,15, 17,18,19, 21,22,23, 25,26,27, 29,30,31, 33,34,35, 37,38,39, 41,42,43, 45,46,47], oh: [] },
+            
+            { name: "3. Goa Trance", desc: "Old school hypnotic. Crash accents.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62], oh: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62] },
+            
+            { name: "4. Dark Psy Driver", desc: "Relentless. Random glitch fill.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: Array.from({length:64}, (_,i)=>i), oh: [0, 8, 16, 24, 32, 40, 48, 56, 59, 61, 63] },
+            
+            { name: "5. Progressive Build", desc: "Slower feel. Kick drop out.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52], s: [12, 28, 44, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [14, 30, 46, 62] },
+            
+            { name: "6. Offbeat Blast", desc: "Upbeat emphasis. Snare build.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 50, 52, 54], s: [4, 12, 20, 28, 36, 44, 52, 56, 58, 60, 62], ch: [], oh: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62] },
+            
+            { name: "7. Tribal Psy", desc: "Percussive. Kick triplets.", k: [0, 3, 8, 11, 16, 19, 24, 27, 32, 35, 40, 43, 48, 51, 54, 57, 60, 63], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [0, 16, 32, 48] },
+            
+            { name: "8. Forest Spirit", desc: "Organic. Syncopated hats.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63], oh: [2, 18, 34, 50] },
+            
+            { name: "9. Morning Full On", desc: "Euphoric. Open hat energy.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23, 26, 27, 30, 31, 34, 35, 38, 39, 42, 43, 46, 47, 50, 51, 54, 55, 58, 59, 62, 63], oh: [0, 8, 16, 24, 32, 40, 48, 56] },
+            
+            { name: "10. Hi-Tech Glitch", desc: "Fast stutter. 32nd notes.", k: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 49, 50, 51, 52, 53, 54, 55], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [0, 3, 6, 9, 12, 15, 16, 19, 22, 25, 28, 31, 32, 35, 38, 41, 44, 47, 48, 51, 54, 57, 60, 63], oh: [] },
+            
+            { name: "11. Psy-Breaks", desc: "Breakbeat pattern at 145.", k: [0, 3, 8, 10, 16, 19, 24, 26, 32, 35, 40, 42, 48, 51, 56, 58], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62], oh: [14, 30, 46, 62] },
+            
+            { name: "12. Israeli Style", desc: "Tight and production ready.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [6, 14, 22, 30, 38, 46, 54, 62] },
+            
+            { name: "13. Gallop Variation", desc: "Missing first 16th.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [], ch: [2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23, 26, 27, 30, 31, 34, 35, 38, 39, 42, 43, 46, 47, 50, 51, 54, 55, 58, 59, 62, 63], oh: [] },
+            
+            { name: "14. Minimal Psy", desc: "Bass focus. Sparse hats.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [12, 28, 44, 60], ch: [2, 10, 18, 26, 34, 42, 50, 58], oh: [] },
+            
+            { name: "15. The Drop", desc: "No kick tension. Snare roll.", k: [], s: [4, 12, 20, 28, 36, 44, 48, 50, 52, 54, 56, 57, 58, 59, 60, 61, 62, 63], ch: Array.from({length:64}, (_,i)=>i), oh: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60] },
+            
+            { name: "16. Double Kick", desc: "Aggressive kick rolls.", k: [0, 3, 4, 8, 11, 12, 16, 19, 20, 24, 27, 28, 32, 35, 36, 40, 43, 44, 48, 50, 51, 52, 54, 55, 56, 58, 59, 60, 62, 63], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [] },
+            
+            { name: "17. Shamanic", desc: "Steady pulse. Open hat rhythm.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [], ch: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62], oh: [0, 8, 16, 24, 32, 40, 48, 56] },
+            
+            { name: "18. Suomisaundi", desc: "Playful and freeform.", k: [0, 4, 9, 12, 16, 20, 25, 28, 32, 36, 41, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 5, 8, 11, 14, 18, 21, 24, 27, 30, 34, 37, 40, 43, 46, 50, 53, 56, 59, 62], oh: [0] },
+            
+            { name: "19. Xenomorph", desc: "Mechanical machine gun.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 49, 50, 51, 52, 53, 54, 55], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [0, 3, 6, 9, 12, 15, 16, 19, 22, 25, 28, 31, 32, 35, 38, 41, 44, 47, 48, 51, 54, 57, 60, 63], oh: [0] },
+            
+            { name: "20. Final Boss", desc: "Max density wall of sound.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: Array.from({length:64}, (_,i)=>i), oh: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62] },
+            
+            { name: "21. Tech-Trance", desc: "Simple effective drive.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 52, 54, 56, 58, 60, 62], oh: [14, 30, 46] },
+            
+            { name: "22. Twilight Psy", desc: "Night time energy.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [0,1,3,4,5,7,8,9,11,12,13,15, 16,17,19,20,21,23,24,25,27,28,29,31, 32,33,35,36,37,39,40,41,43,44,45,47], oh: [] },
+            
+            { name: "23. Nitzhonot", desc: "Uplifting melody support.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [0, 16, 32, 48] },
+            
+            { name: "24. Zenonesque", desc: "Dark progressive funk.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [12, 28, 44, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 52, 54, 56, 58, 60, 62], oh: [] },
+            
+            { name: "25. Dark Progressive", desc: "Atmospheric build.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [14, 30, 46, 62] },
+            
+            { name: "26. Psy-Chill", desc: "Half-time feel.", k: [0, 6, 16, 22, 32, 38, 48, 54], s: [8, 24, 40, 56], ch: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62], oh: [0] },
+            
+            { name: "27. Glitchy Fill", desc: "Random snare patterns.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 7, 10, 12, 20, 28, 31, 36, 39, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [] },
+            
+            { name: "28. Build-Up Snare", desc: "Snare roll tension.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 50, 52, 54], s: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 42, 44, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63], ch: [], oh: [] },
+            
+            { name: "29. Reverse Bass", desc: "Offbeat emphasis.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62], oh: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62] },
+            
+            { name: "30. Final Boss (Max)", desc: "Everything at once.", k: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60], s: [4, 12, 20, 28, 36, 44, 52, 60], ch: Array.from({length:64}, (_,i)=>i), oh: [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60] }
+        ];
 
+        // --- UI Logic ---
+        function createGrid() {
+            const indRow = document.getElementById('indicators-row');
+            if (!indRow) return;
+            indRow.innerHTML = '<div></div>'; 
+            
+            for(let i=0; i<STEPS; i++) {
+                const div = document.createElement('div');
+                div.className = 'indicator';
+                div.id = `ind-${i}`;
+                div.dataset.bar = Math.floor(i / 16);
+                if (div.dataset.bar != currentBarView) div.classList.add('hidden-step');
+                indRow.appendChild(div);
+            }
+
+            const rows = ['openhat', 'hihat', 'snare', 'kick'];
+            rows.forEach((rowName, rowIndex) => {
+                const container = document.getElementById(`row-${rowIndex}`);
+                if (!container) return;
+                
+                // Track Label Injection
+                container.innerHTML = `<div class="track-label">${rowName.toUpperCase().replace('OPENHAT','CRASH/FX').replace('HIHAT','HAT')}</div>`;
+                
+                for (let i = 0; i < STEPS; i++) {
+                    const btn = document.createElement('div');
+                    btn.className = `step row-${rowIndex}`; // Add specific class
+                    btn.id = `step-${rowIndex}-${i}`; // Standardized ID
+                    btn.dataset.bar = Math.floor(i / 16);
+                    if (Math.floor(i / 16) != currentBarView) btn.classList.add('hidden-step');
+                    
+                    btn.addEventListener('click', () => toggleStep(rowIndex, i));
+                    container.appendChild(btn);
+                }
+            });
+        }
+
+        function toggleStep(row, step) {
+            gridState[row][step] = !gridState[row][step];
+            updateGridUI();
+            document.getElementById('patternName').innerText = "CUSTOM PATTERN";
+            document.getElementById('descDisplay').innerText = "Manual Edit";
+        }
+
+        function updateGridUI() {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < STEPS; c++) {
+                    const el = document.getElementById(`step-${r}-${c}`);
+                    if (el) {
+                        el.classList.toggle('active', gridState[r][c]);
+                    }
+                }
+            }
+        }
+
+        function switchBarView(barIdx) {
+            currentBarView = parseInt(barIdx);
+            document.querySelectorAll('.bar-btn').forEach(btn => {
+                btn.classList.toggle('current', parseInt(btn.dataset.bar) === currentBarView);
+            });
+            document.querySelectorAll('.step, .indicator').forEach(el => {
+                if (el.dataset.bar == currentBarView) {
+                    el.classList.remove('hidden-step');
+                } else {
+                    el.classList.add('hidden-step');
+                }
+            });
+        }
+
+        function loadPreset(idx) {
+            const p = presets[idx];
+            gridState = [new Array(STEPS).fill(false), new Array(STEPS).fill(false), new Array(STEPS).fill(false), new Array(STEPS).fill(false)];
+            
+            if(p.oh) p.oh.forEach(s => gridState[0][s] = true);
+            if(p.ch) p.ch.forEach(s => gridState[1][s] = true);
+            if(p.s) p.s.forEach(s => gridState[2][s] = true);
+            if(p.k) p.k.forEach(s => gridState[3][s] = true);
+
+            updateGridUI();
+            document.getElementById('patternName').innerText = p.name;
+            document.getElementById('descDisplay').innerText = p.desc;
+        }
+
+        // --- SCHEDULER ---
+        function nextNote() {
+            const secondsPerBeat = 60.0 / bpm;
+            const secondsPerStep = secondsPerBeat / 4; 
+            nextNoteTime += secondsPerStep;
+            currentStep = (currentStep + 1) % STEPS;
+        }
+
+        function scheduleNote(step, time) {
+            setTimeout(() => {
+                if (!isPlaying) return;
+                requestAnimationFrame(() => {
+                    const stepBar = Math.floor(step / 16);
+                    if (autoFollow && stepBar !== currentBarView) switchBarView(stepBar);
+
+                    document.querySelectorAll('.indicator.head-active').forEach(el => el.classList.remove('head-active'));
+                    document.querySelectorAll('.step.playing').forEach(el => el.classList.remove('playing'));
+                    
+                    const ind = document.getElementById(`ind-${step}`);
+                    if (ind) ind.classList.add('head-active');
+
+                    for (let r = 0; r < 4; r++) {
+                        const el = document.getElementById(`step-${r}-${step}`);
+                        if (el && gridState[r][step]) {
+                            el.classList.add('playing');
+                        }
+                    }
+                });
+            }, (time - audioCtx.currentTime) * 1000);
+
+            if (gridState[0][step]) playHiHat(time, true);
+            if (gridState[1][step]) playHiHat(time, false);
+            if (gridState[2][step]) playSnare(time);
+            if (gridState[3][step]) playKick(time);
+        }
+
+        function scheduler() {
+            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                scheduleNote(currentStep, nextNoteTime);
+                nextNote();
+            }
+            if (isPlaying) {
+                timerID = setTimeout(scheduler, lookahead);
+            }
+        }
+
+        function play() {
+            if (isPlaying) return;
+            initAudio();
+            isPlaying = true;
+            currentStep = 0;
+            nextNoteTime = audioCtx.currentTime + 0.1;
+            if (autoFollow) switchBarView(0);
+            scheduler();
+            document.getElementById('playBtn').classList.add('active');
+            document.getElementById('stopBtn').classList.remove('active');
+        }
+
+        function stop() {
+            isPlaying = false;
+            clearTimeout(timerID);
+            document.getElementById('playBtn').classList.remove('active');
+            document.getElementById('stopBtn').classList.add('active');
+            setTimeout(() => {
+                 document.querySelectorAll('.indicator.head-active').forEach(el => el.classList.remove('head-active'));
+                 document.querySelectorAll('.step.playing').forEach(el => el.classList.remove('playing'));
+                 document.getElementById('stopBtn').classList.remove('active');
+            }, 200);
+        }
+
+        function clearGrid() {
+            gridState = [new Array(STEPS).fill(false), new Array(STEPS).fill(false), new Array(STEPS).fill(false), new Array(STEPS).fill(false)];
+            updateGridUI();
+            document.getElementById('patternName').innerText = "SYSTEM CLEARED";
+            document.getElementById('descDisplay').innerText = "";
+        }
+
+        async function exportMIDI() {
+            initAudio();
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            };
             const writeVarInt = (data, val) => {
                 let buffer = val & 0x7F;
                 while ((val >>= 7)) {
@@ -516,12 +761,10 @@
                     else break;
                 }
             };
-
             const PPQ = 480;
             const stepTicks = 120;
             let events = [];
-
-            // Mapping: 3=Kick(36), 2=Snare(38), 1=CH(42), 0=OH/Crash(49)
+            // Mapping for MIDI: OH(49), CH(42), Snare(38), Kick(36)
             const noteMap = { 3: 36, 2: 38, 1: 42, 0: 49 };
 
             for (let step = 0; step < STEPS; step++) {
@@ -534,243 +777,44 @@
                     }
                 }
             }
-
             events.sort((a, b) => a.tick - b.tick);
-
             let trackData = [];
             let lastTick = 0;
-
             events.forEach(e => {
                 const delta = e.tick - lastTick;
                 writeVarInt(trackData, delta);
-                trackData.push(e.type | 0x09);
-                trackData.push(e.note);
-                trackData.push(e.velocity);
+                trackData.push(e.type | 0x09); trackData.push(e.note); trackData.push(e.velocity);
                 lastTick = e.tick;
             });
-
-            writeVarInt(trackData, 0);
-            trackData.push(0xFF, 0x2F, 0x00);
-
-            const headerSize = 14;
-            const trackHeaderSize = 8;
-            const totalSize = headerSize + trackHeaderSize + trackData.length;
+            writeVarInt(trackData, 0); trackData.push(0xFF, 0x2F, 0x00);
+            
+            const totalSize = 14 + 8 + trackData.length;
             const buffer = new ArrayBuffer(totalSize);
             const view = new DataView(buffer);
-
-            writeString(view, 0, 'MThd');
-            view.setUint32(4, 6);
-            view.setUint16(8, 0);
-            view.setUint16(10, 1);
-            view.setUint16(12, PPQ);
-
-            writeString(view, 14, 'MTrk');
-            view.setUint32(18, trackData.length);
-            
+            writeString(view, 0, 'MThd'); view.setUint32(4, 6); view.setUint16(8, 0); view.setUint16(10, 1); view.setUint16(12, PPQ);
+            writeString(view, 14, 'MTrk'); view.setUint32(18, trackData.length);
             const bytes = new Uint8Array(buffer);
-            for (let i = 0; i < trackData.length; i++) {
-                bytes[22 + i] = trackData[i];
-            }
+            for (let i = 0; i < trackData.length; i++) bytes[22 + i] = trackData[i];
 
             const blob = new Blob([bytes], { type: 'audio/midi' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'psytrance_pattern.mid';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // --- 20 Psytrance Presets ---
-        const presets = [
-            { name: "1. Full On Basic", desc: "The standard galloping rhythm.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [2, 3, 6, 7, 10, 11, 14, 15], oh: [] },
-            
-            { name: "2. The Rolling Bass", desc: "Classic K-B-B-B feel simulator.", 
-              k: [0, 4, 8, 12], s: [], ch: [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15], oh: [] },
-            
-            { name: "3. Goa Trance", desc: "Old school hypnotic.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [0, 2, 4, 6, 8, 10, 12, 14], oh: [2, 6, 10, 14] },
-            
-            { name: "4. Dark Psy Driver", desc: "Relentless and fast.", 
-              k: [0, 4, 8, 12], s: [], ch: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], oh: [0, 8] },
-            
-            { name: "5. Progressive Build", desc: "Slower feel, open spaces.", 
-              k: [0, 4, 8, 12], s: [12], ch: [2, 6, 10, 14], oh: [14] },
-            
-            { name: "6. Offbeat Blast", desc: "Emphasis on the upbeat.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [], oh: [2, 6, 10, 14] },
-            
-            { name: "7. Tribal Psy", desc: "Percussive tom-like feel.", 
-              k: [0, 3, 8, 11], s: [4, 12], ch: [2, 6, 10, 14], oh: [0] },
-            
-            { name: "8. Forest Spirit", desc: "Organic and woody.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [1, 3, 5, 7, 9, 11, 13, 15], oh: [2] },
-            
-            { name: "9. Morning Full On", desc: "Euphoric and uplifting.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [2, 3, 6, 7, 10, 11, 14, 15], oh: [0, 8] },
-            
-            { name: "10. Hi-Tech Glitch", desc: "Fast and stuttery.", 
-              k: [0, 2, 4, 6, 8, 10, 12, 14], s: [4, 12], ch: [0, 3, 6, 9, 12, 15], oh: [] },
-            
-            { name: "11. Psy-Breaks", desc: "Breakbeat influence.", 
-              k: [0, 3, 8, 10], s: [4, 12], ch: [0, 2, 4, 6, 8, 10, 12, 14], oh: [14] },
-            
-            { name: "12. Israeli Style", desc: "Tight production style.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [2, 6, 10, 14], oh: [6, 14] },
-            
-            { name: "13. Gallop Variation", desc: "Missing the first 16th.", 
-              k: [0, 4, 8, 12], s: [], ch: [2, 3, 6, 7, 10, 11, 14, 15], oh: [] },
-            
-            { name: "14. Minimal Psy", desc: "Kick and bass focus.", 
-              k: [0, 4, 8, 12], s: [12], ch: [2, 10], oh: [] },
-            
-            { name: "15. The Drop", desc: "No kick, just tension.", 
-              k: [], s: [4, 12], ch: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], oh: [0, 4, 8, 12] },
-            
-            { name: "16. Double Kick", desc: "Aggressive roll.", 
-              k: [0, 3, 4, 8, 11, 12], s: [4, 12], ch: [2, 6, 10, 14], oh: [] },
-            
-            { name: "17. Shamanic", desc: "Steady pulse.", 
-              k: [0, 4, 8, 12], s: [], ch: [0, 2, 4, 6, 8, 10, 12, 14], oh: [0, 8] },
-            
-            { name: "18. Suomisaundi", desc: "Playful and freeform.", 
-              k: [0, 4, 9, 12], s: [4, 12], ch: [2, 5, 8, 11, 14], oh: [0] },
-            
-            { name: "19. Xenomorph", desc: "Mechanical.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [0, 3, 6, 9, 12, 15], oh: [0] },
-            
-            { name: "20. Final Boss", desc: "Max density.", 
-              k: [0, 4, 8, 12], s: [4, 12], ch: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], oh: [2,6,10,14] }
-        ];
-
-        // --- UI Generation ---
-        function createGrid() {
-            const rows = ['openhat', 'hihat', 'snare', 'kick'];
-            const indRow = document.getElementById('indicators-row');
-
-            // Create Indicators
-            for(let i=0; i<STEPS; i++) {
-                const div = document.createElement('div');
-                div.className = 'indicator';
-                div.id = `ind-${i}`;
-                indRow.appendChild(div);
-            }
-
-            // Create Steps
-            rows.forEach((row, rowIndex) => {
-                const container = document.getElementById(`row-${row}`);
-                for (let i = 0; i < STEPS; i++) {
-                    const btn = document.createElement('div');
-                    btn.className = 'step';
-                    btn.id = `${row}-${i}`;
-                    btn.addEventListener('click', () => toggleStep(rowIndex, i));
-                    container.appendChild(btn);
-                }
-            });
-        }
-
-        function toggleStep(row, step) {
-            gridState[row][step] = !gridState[row][step];
-            updateGridUI();
-            document.getElementById('patternName').innerText = "CUSTOM PATTERN";
-        }
-
-        function updateGridUI() {
-            const rows = ['openhat', 'hihat', 'snare', 'kick'];
-            rows.forEach((row, rowIndex) => {
-                for (let i = 0; i < STEPS; i++) {
-                    const el = document.getElementById(`${row}-${i}`);
-                    el.classList.toggle('active', gridState[rowIndex][i]);
-                }
-            });
-        }
-
-        // --- Scheduler ---
-        function nextNote() {
-            const secondsPerBeat = 60.0 / bpm;
-            const secondsPerStep = secondsPerBeat / 4; 
-            nextNoteTime += secondsPerStep;
-            currentStep = (currentStep + 1) % STEPS;
-        }
-
-        function scheduleNote(stepNumber, time) {
-            setTimeout(() => {
-                document.querySelectorAll('.indicator').forEach(el => el.classList.remove('active'));
-                document.querySelectorAll('.step').forEach(el => el.classList.remove('playing'));
-                
-                const ind = document.getElementById(`ind-${stepNumber}`);
-                if(ind) ind.classList.add('active');
-
-                const rows = ['openhat', 'hihat', 'snare', 'kick'];
-                rows.forEach((row, rIdx) => {
-                    if (gridState[rIdx][stepNumber]) {
-                        document.getElementById(`${row}-${stepNumber}`).classList.add('playing');
-                    }
-                });
-            }, (time - audioCtx.currentTime) * 1000);
-
-            if (gridState[0][stepNumber]) playHiHat(time, true);
-            if (gridState[1][stepNumber]) playHiHat(time, false);
-            if (gridState[2][stepNumber]) playSnare(time);
-            if (gridState[3][stepNumber]) playKick(time);
-        }
-
-        function scheduler() {
-            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
-                scheduleNote(currentStep, nextNoteTime);
-                nextNote();
-            }
-            timerID = setTimeout(scheduler, lookahead);
-        }
-
-        function play() {
-            if (isPlaying) return;
-            initAudio();
-            isPlaying = true;
-            currentStep = 0;
-            nextNoteTime = audioCtx.currentTime;
-            scheduler();
-            document.getElementById('playBtn').classList.add('active');
-            document.getElementById('stopBtn').classList.remove('active');
-        }
-
-        function stop() {
-            isPlaying = false;
-            clearTimeout(timerID);
-            document.getElementById('playBtn').classList.remove('active');
-            document.getElementById('stopBtn').classList.add('active');
-            setTimeout(() => {
-                 document.querySelectorAll('.indicator').forEach(el => el.classList.remove('active'));
-                 document.querySelectorAll('.step').forEach(el => el.classList.remove('playing'));
-                 document.getElementById('stopBtn').classList.remove('active');
-            }, 200);
-        }
-
-        function clearGrid() {
-            gridState = Array(4).fill().map(() => Array(STEPS).fill(false));
-            updateGridUI();
-            document.getElementById('patternName').innerText = "SYSTEM RESET";
-            document.getElementById('descDisplay').innerText = "Select Program.";
-            document.getElementById('presetSelect').value = "";
-        }
-
-        function loadPreset(index) {
-            clearGrid();
-            const p = presets[index];
-            p.oh.forEach(s => gridState[0][s] = true);
-            p.ch.forEach(s => gridState[1][s] = true);
-            p.s.forEach(s => gridState[2][s] = true);
-            p.k.forEach(s => gridState[3][s] = true);
-            updateGridUI();
-            document.getElementById('patternName').innerText = p.name;
-            document.getElementById('descDisplay').innerText = p.desc;
+            const a = document.createElement('a'); 
+            a.href = url; a.download = `psytrance_pattern_${Date.now()}.mid`; 
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
         }
 
         window.addEventListener('load', () => {
             createGrid();
+            
+            document.querySelectorAll('.bar-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => switchBarView(e.target.dataset.bar));
+            });
+            
+            document.getElementById('autoFollowCheck').addEventListener('change', (e) => {
+                autoFollow = e.target.checked;
+            });
+
             const sel = document.getElementById('presetSelect');
             presets.forEach((p, i) => {
                 const opt = document.createElement('option');
@@ -789,9 +833,7 @@
             });
 
             document.getElementById('volSlider').addEventListener('input', (e) => {
-                const val = parseInt(e.target.value);
-                document.getElementById('volVal').innerText = val + "%";
-                masterVolume = val / 100;
+                masterVolume = e.target.value / 100;
                 if(masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioCtx.currentTime);
             });
             
